@@ -1,42 +1,35 @@
-import { Produto as ProdutoType } from '../App'
-import Produto from '../components/Produto'
-
+import React from 'react'
+import ProdutoComponent from '../components/Produto'
+import { useGetProdutosQuery } from '../services/api'
 import * as S from './styles'
+import { Produto } from '../App'
 
 type Props = {
-  produtos: ProdutoType[]
-  favoritos: ProdutoType[]
-  adicionarAoCarrinho: (produto: ProdutoType) => void
-  favoritar: (produto: ProdutoType) => void
+  favoritos: Produto[]
+  favoritar: (produto: Produto) => void
 }
 
-const ProdutosComponent = ({
-  produtos,
-  favoritos,
-  adicionarAoCarrinho,
-  favoritar
-}: Props) => {
-  const produtoEstaNosFavoritos = (produto: ProdutoType) => {
-    const produtoId = produto.id
-    const IdsDosFavoritos = favoritos.map((f) => f.id)
+const ProdutosComponent: React.FC<Props> = ({ favoritos, favoritar }) => {
+  const { data: produtos, isLoading } = useGetProdutosQuery()
 
-    return IdsDosFavoritos.includes(produtoId)
+  if (isLoading) return <h2>Carregando...</h2>
+
+  const produtoEstaNosFavoritos = (produto: Produto) => {
+    const produtoId = produto.id
+    return favoritos.some((p) => p.id === produtoId)
   }
 
   return (
-    <>
-      <S.Produtos>
-        {produtos.map((produto) => (
-          <Produto
-            estaNosFavoritos={produtoEstaNosFavoritos(produto)}
-            key={produto.id}
-            produto={produto}
-            favoritar={favoritar}
-            aoComprar={adicionarAoCarrinho}
-          />
-        ))}
-      </S.Produtos>
-    </>
+    <S.Produtos>
+      {produtos?.map((produto) => (
+        <ProdutoComponent
+          key={produto.id}
+          produto={produto}
+          favoritar={favoritar}
+          estaNosFavoritos={produtoEstaNosFavoritos(produto)}
+        />
+      ))}
+    </S.Produtos>
   )
 }
 

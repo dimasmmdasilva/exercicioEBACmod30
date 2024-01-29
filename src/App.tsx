@@ -1,36 +1,26 @@
-import { useEffect, useState } from 'react'
-import Header from './components/Header'
-import Produtos from './containers/Produtos'
-
+import React, { useState, useEffect } from 'react'
+import { Provider } from 'react-redux'
 import { GlobalStyle } from './styles'
-
-export type Produto = {
-  id: number
-  nome: string
-  preco: number
-  imagem: string
-}
+import Header from './components/Header'
+import ProdutosComponent from './containers/Produtos'
+import { store } from './store'
+import { useGetProdutosQuery } from './services/api'
+import { Produto } from './components/Produto'
 
 function App() {
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [carrinho, setCarrinho] = useState<Produto[]>([])
   const [favoritos, setFavoritos] = useState<Produto[]>([])
 
+  const { data: produtosData, isLoading: isLoadingProdutos } =
+    useGetProdutosQuery()
+
   useEffect(() => {
-    fetch('https://fake-api-tau.vercel.app/api/ebac_sports')
-      .then((res) => res.json())
-      .then((res) => setProdutos(res))
-  }, [])
-
-  function adicionarAoCarrinho(produto: Produto) {
-    if (carrinho.find((p) => p.id === produto.id)) {
-      alert('Item já adicionado')
-    } else {
-      setCarrinho([...carrinho, produto])
+    if (produtosData) {
+      setProdutos(produtosData)
     }
-  }
+  }, [produtosData])
 
-  function favoritar(produto: Produto) {
+  const favoritar = (produto: Produto) => {
     if (favoritos.find((p) => p.id === produto.id)) {
       const favoritosSemProduto = favoritos.filter((p) => p.id !== produto.id)
       setFavoritos(favoritosSemProduto)
@@ -40,18 +30,21 @@ function App() {
   }
 
   return (
-    <>
+    <Provider store={store}>
       <GlobalStyle />
       <div className="container">
-        <Header favoritos={favoritos} itensNoCarrinho={carrinho} />
-        <Produtos
-          produtos={produtos}
-          favoritos={favoritos}
-          favoritar={favoritar}
-          adicionarAoCarrinho={adicionarAoCarrinho}
-        />
+        <Header favoritos={favoritos} />
+        {isLoadingProdutos ? (
+          <h2>Carregando...</h2>
+        ) : (
+          <ProdutosComponent
+            produtos={produtos}
+            favoritos={favoritos}
+            favoritar={favoritar}
+          />
+        )}
       </div>
-    </>
+    </Provider>
   )
 }
 
